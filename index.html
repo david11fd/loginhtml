@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mapa + Tiempo - La Sagrada Família</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body { font-family: Arial, sans-serif; margin: 16px; background:#f5f7fb; color:#222; }
+  h1 { font-size:18px; margin-bottom:8px; }
+  .container { display:flex; flex-wrap:wrap; gap:16px; }
+  .map, .weather {
+    background:#fff; border:1px solid #d7dbe6; border-radius:6px; padding:10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .map { flex:1 1 480px; min-width:300px; }
+  .weather { width:240px; min-width:200px; }
+  iframe { width:100%; height:360px; border:0; border-radius:4px; }
+  .weather .title { font-weight:bold; margin-bottom:6px; }
+  .weather .temp { font-size:28px; margin:8px 0; }
+  .weather .desc { text-transform:capitalize; }
+  .note { font-size:12px; color:#666; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<h1>Mapa y tiempo — La Sagrada Família (Barcelona)</h1>
+
+<div class="container">
+  <!-- MAPA (Google Maps embed sin API key) -->
+  <div class="map">
+    <div class="title">Ubicación en el mapa</div>
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2992.6744865795566!2d2.172200915258488!3d41.40362997926309!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12a4a2f6a3e3f8d7%3A0x9b6b2b5a7c2c8c2d!2sSagrada%20Fam%C3%ADlia!5e0!3m2!1ses!2ses!4v1600000000000!5m2!1ses!2ses"
+      allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+    <div class="note">Si haces zoom o pulsas en el mapa puedes abrir la vista completa en Google Maps.</div>
+  </div>
+
+  <!-- TIEMPO (usa OpenWeatherMap) -->
+  <div class="weather" id="weatherBox">
+    <div class="title">Tiempo en La Sagrada Família</div>
+    <div id="weatherContent">
+      <div>Cargando datos meteorológicos...</div>
+    </div>
+    <div class="note">Datos: OpenWeatherMap</div>
+  </div>
+</div>
+
+<script>
+/*
+  CONFIGURACIÓN:
+  - Reemplaza TU_API_KEY_AQUI por tu clave de OpenWeatherMap.
+  - Coordenadas usadas: lat = 41.40363, lon = 2.17436 (Sagrada Família, Barcelona)
+*/
+const API_KEY = "TU_API_KEY_AQUI"; // <- pon aquí tu API key
+const lat = 41.40363;
+const lon = 2.17436;
+
+function mostrarError(msg) {
+  document.getElementById('weatherContent').innerHTML =
+    '<div style="color:#b00;">Error: ' + msg + '</div>';
+}
+
+if (!API_KEY || API_KEY === "TU_API_KEY_AQUI") {
+  mostrarError("No hay API key. Reemplaza API_KEY en el código con tu clave de OpenWeatherMap.");
+} else {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=es&appid=${API_KEY}`;
+  fetch(url)
+    .then(response => {
+      if (!response.ok) throw new Error("Respuesta de API no válida (" + response.status + ")");
+      return response.json();
+    })
+    .then(data => {
+      // Estructura mínima para mostrar: temperatura, sensación, descripción, icono, viento
+      const nombre = data.name || "Ubicación";
+      const temp = Math.round(data.main.temp);
+      const feels = Math.round(data.main.feels_like);
+      const desc = data.weather && data.weather[0] ? data.weather[0].description : "";
+      const iconCode = data.weather && data.weather[0] ? data.weather[0].icon : null;
+      const viento = data.wind ? data.wind.speed : null;
+
+      const iconUrl = iconCode ? `https://openweathermap.org/img/wn/${iconCode}@2x.png` : "";
+
+      document.getElementById('weatherContent').innerHTML = `
+        <div style="font-size:14px; font-weight:600;">${nombre}</div>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+          ${iconUrl ? '<img src="' + iconUrl + '" alt="icon" width="64" height="64">' : ''}
+          <div>
+            <div class="temp">${temp}°C</div>
+            <div>Sensación: ${feels}°C</div>
+            <div class="desc">${desc}</div>
+            ${viento !== null ? '<div>Viento: ' + viento + ' m/s</div>' : ''}
+          </div>
+        </div>
+      `;
+    })
+    .catch(err => {
+      mostrarError(err.message);
+    });
+}
+</script>
+
+</body>
+</html>
